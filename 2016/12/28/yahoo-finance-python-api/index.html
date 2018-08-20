@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+  <title>Venkat Krishnan | Shell Script Loop for Yahoo-Finance Python API Fetch Error</title>
+  <meta charset="utf-8">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <meta name="description" content="This blog has some thoughts and projects that I've been working on recently. If you'd like to share some ideas on topics I've posted, email me at vkrishnan [at] ucsb.edu">
+	<meta property="og:title" content="The Adventures of Venkat Krishnan"/>
+    <meta property="og:url" content="https://vrobot.github.io"/>
+    <meta property="og:site_name" content="The Adventures of Venkat Krishnan"/>
+    <meta property="og:type" content="blog"/>
+    <meta property="og:description" content="This blog has some thoughts and projects that I've been working on recently. If you'd like to share some ideas on topics I've posted, email me at vkrishnan [at] ucsb.edu">
+    <meta property="og:image" content="https://vrobot.github.io/img/profile.jpg">  
+ 
+  <link rel="canonical" href="https://vrobot.github.io/2016/12/28/yahoo-finance-python-api/">
+  <link rel="shortcut icon" href="../../../../img/favicon.ico">
+  <link rel="stylesheet" href="../../../../css/main.css">
+  <link rel="stylesheet" href="../../../../css/syntax.css">
+  <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro:200,300,400,600,700,900,200italic,300italic,400italic,600italic,700italic,900italic&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:200,300,400,500,600,700,900&subset=latin,latin-ext' rel='stylesheet' type='text/css'>
+  
+  	<!-- The next section is for google authentication -->
+	<meta name="google-site-verification" content="Kc8BTwj09E0jhjhIN29d7hZAkQPLDMQJyw5QFse_FQA" />
+	
+	<meta name="google-site-verification" content="2M8vRUQygiHkoVcm83x05Dsi2CFWe_VnF67gYtoJzCI" />
+		
+	<meta name="google-signin-client_id" content="523796096613-g7rilrn4nkiclnok6jrmo7bl9gevovlv.apps.googleusercontent.com">
+	
+	<script src="https://apis.google.com/js/platform.js" async defer></script>
+	
+	
+	
+	<!-- Google authentication code is in the above section -->
+	
+	<!-- Google Analytics -->
+	
+	<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-80729776-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+	
+	<!-- End of Google Analytics code -->
+  
+</head>
+
+
+  <body>
+
+    <div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+<h1><a href="../../../../">Hi! I'm Venkat Krishnan.</a></h1>
+	  <h1><a href="../../../../">I'm interested in Science and Technology and enjoy working on projects in these areas.</a></h1>
+	<p class="tagline">&nbsp;</p>
+    </div>
+
+ <!--   <input type="checkbox" id="menu-icon"> -->
+    <label class="menu-label" for="menu-icon"></label>
+    <div class="trigger">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-item active">
+          <a href="../../../../">Home</a>
+		  
+		  
+		  
+		   <span> | </span>
+		  
+		  
+		  
+		  <a href="../../../../about/">About Me</a>
+		  
+        </li>
+
+            
+           
+         
+
+      </ul>
+    </div>
+
+    <p class="copyright">© 2018 Venkat Krishnan. All rights reserved.</p>
+  </div>
+</div>
+</div>
+
+
+    <div class="content container">
+      <div class="posts">
+  
+ 
+	
+ 
+  <div class="post">
+   <div class="post">
+    <h1 class="post-title">
+      <a href="./">
+        Shell Script Loop for Yahoo-Finance Python API Fetch Error
+      </a>
+    </h1>
+
+    <span class="post-date">28 December 2016</span>
+
+	
+<p>For the past month, I've been working with a friend on an algorithm to predict fluctuations in the stock market. </p>
+
+<p>We initially started by gathering historical data on various stocks using the <a href="https://pypi.python.org/pypi/yahoo-finance">yahoo-finance python api</a>. Install it with <code class="highlighter-rouge">pip install yahoo-finance</code>.</p>
+
+<h3>Sample Input</h3>
+
+
+<div id="formattedlist"> <p>I had a list of stocks with their IPO release year formatted as shown below:</p> </div>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">AAAP 2015</span><span class="w">
+</span><span class="p">AAOI 2013</span>
+<span class="p">AAPC 2015</span>
+<span class="p">AAPL 1980</span>
+<span class="p">ABAX 1992</span>
+<span class="p">ABCB 1994</span>
+<span class="p">ABCO 2001</span>
+<span class="p">ABIL 2014</span>
+<span class="p">ABTL 1999</span>
+<span class="p">ABTX 2015</span>
+<span class="p">"  " "  "</span>
+</code></pre>
+</div>
+
+<p>I originally looped the following code for each item in this list (approximately 1400). </p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight">
+<code><span class="c">#!/usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">yahoo_finance</span> <span class="kn">import</span> <span class="nn">Share</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">arg1</span> <span class="o">=</span> <span class="n">sysargv[</span><span class="nt">1</span><span class="n">]</span>
+<span class="n">arg2</span> <span class="o">=</span> <span class="n">sysargv[</span><span class="nt">2</span><span class="n">]</span>
+
+<span class="n">date</span> <span class="o">=</span> <span class="n">time.<span class="nf">strftime</span>(<span class="s">"</span><span class="nt">%y-%m-%d</span><span class="s">"</span>)</span>
+<span class="n">date</span> <span class="o">=</span> <span class="n"><span class="s">"20"</span> <span class="o">+</span> date</span>
+
+<span class="n">stock</span> <span class ="o">=</span> <span class="nf">Share</span><span class="n">(arg1)</span>
+
+<span class ="nf">pprint</span> <span class="n">(stock.</span><span class="nf">get_historical</span>(arg2<span class="o">+</span><span class="s">'-12-31'</span><span class ="n">, date))</span>
+</code></pre>
+</div>
+
+<h3>Sample Output</h3>
+
+
+<p>If we were to find all the historical data for Advanced Accelerator Application SA (AAAP) from its IPO release in 2015 we would enter<code class="highlighter-rouge">python criticaldates.py AAAP 2015</code>, where <code class="highlighter-rouge">criticaldates.py</code> is the program above. The output we would get would look something like this:</p>
+
+
+<div class="language-python highlighter-rouge" id="output"><pre class="highlight">
+<code><span class="nn">[{'Adj_Close': '26.290001',
+  'Close': '26.290001',
+  'Date': '2016-12-27',
+  'High': '27.68',
+  'Low': '23.77',
+  'Open': '23.77',
+  'Symbol': 'AAAP',
+  'Volume': '372500'},
+ {'Adj_Close': '24.07',
+  'Close': '24.07',
+  'Date': '2016-12-23',
+  'High': '24.389999',
+  'Low': '23.51',
+  'Open': '23.790001',
+  'Symbol': 'AAAP',
+  'Volume': '148300'},
+   {'Adj_Close': '23.709999',
+  'Close': '23.709999',
+  'Date': '2016-12-22',
+  'High': '24.92',
+  'Low': '23.50',
+  'Open': '24.120001',
+  'Symbol': 'AAAP',
+  'Volume': '376100'},
+ {'Adj_Close': '24.68',
+  'Close': '24.68',
+  'Date': '2016-12-21',
+  'High': '25.540001',
+  'Low': '23.98',
+  'Open': '25.110001',
+  'Symbol': 'AAAP',
+  'Volume': '189900'},
+ {'Adj_Close': '26.209999',
+  'Close': '26.209999',
+  'Date': '2016-12-20',
+  'High': '26.940001',
+  'Low': '25.389999',
+  'Open': '26.34',
+  'Symbol': 'AAAP',
+  'Volume': '107700'},
+ {'Adj_Close': '26.27',
+  'Close': '26.27',
+  'Date': '2016-12-19',
+  'High': '27.82',
+  'Low': '26.25',
+  'Open': '27.60',
+  'Symbol': 'AAAP',
+  'Volume': '54800'},
+  "                 ",
+  "                 "]
+</span></code></pre>
+</div>
+
+<p>However, in some occurances when the program was looped in python, I got the following error and the program would be aborted; if I ran the program again, it would get aborted at a different point on the list with the same error.</p>
+
+<div class="language-python highlighter-rouge"><pre class="highlight">
+<code><span class="nn">  File "/usr/lib/python2.7/urllib2.py", line 556, in http_error_default
+    raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
+urllib2.HTTPError: HTTP Error 502: Cannot find server.
+</span></code></pre>
+</div>
+
+<h3>My Solution</h3>
+
+
+<p>Since the error was inconsistant and aborted the program at different points on the list each time, I decided to write the following shell script to externally loop the <code class="highlighter-rouge">criticaldates.py</code> program instead of making the loop withing the python program itself:</p>
+
+<div class="language-python highlighter-rouge" id="shellscript"><pre class="highlight">
+<code><span class="c">#!/bin/bash</span>
+
+<span class="n">IFS</span><span class="o">=</span><span class="n">$</span><span class="s">'</span><span class="nt">\n</span><span class="s">'</span>
+
+<span class ="o">for</span> <span class="n">i</span> <span class="o">in</span> <span class="n">`cat stocklist`</span>
+do
+
+a<span class="o">=</span>`echo <span class="s">"${i:(-5)}"</span>`
+c<span class="o">=</span>`basename $i $a`
+b<span class="o">=</span>`basename $c <span class="s">'     '</span>`
+d<span class="o">=</span>`echo <span class="s">"${i:(-4)}"</span>`
+
+cd $b
+
+echo <span class="o">=====</span> start $b <span class="o">===== >></span> historicaldates_${b}
+python ../criticaldates.py $b $d <span class="o">>></span> historicaldates_${b}
+
+<span class="o">if</span> [ $? <span class="o">!=</span> <span class="nt">0</span> ]; then
+	echo $i  <span class="o">>></span> ../retry_file
+<span class="o">else</span>
+	echo $i <span class="o">>></span> ../outputfile
+<span class="o">fi</span>
+
+echo <span class="o">=====</span> end $b <span class="o">===== >></span> historicaldates_${b}
+
+cd ..
+
+done
+</span></code></pre>
+</div>
+
+<h3>Running The Program</h3>
+
+
+<p>To run the shell script above, the <code class="highlighter-rouge">criticaldates.py</code> program has to be in the same directory, along with a file called <code class="highlighter-rouge">stocklist</code>, that contains a list of stocks and their IPO release dates and is formatted as described <a href="https://vrobot.github.io/2016/12/28/yahoo-finance-python-api/#formattedlist">earlier</a>, and a directory for each stock (Apple's stock would have a directory with the name AAPL). The output stores a <a href="https://vrobot.github.io/2016/12/28/yahoo-finance-python-api/#output">similar file</a> called <code class="highlighter-rouge">historicaldates_STOCKNAME</code> in each stock's folder where STOCKNAME is the stock's symbol as presented in the <code class="highlighter-rouge">stocklist</code>. In addition, two more files, <code class="highlighter-rouge">retry_file</code> and <code class="highlighter-rouge">outputfile</code> will be created in the parent directory. The <code class="highlighter-rouge">outputfile</code> is a list of all the successful items in <code class="highlighter-rouge">stocklist</code>; the <code class="highlighter-rouge">retry_list</code> is a list of all the unsuccessful items in <code class="highlighter-rouge">stocklist</code>. To rerun the program for the items in <code class="highlighter-rouge">retry_list</code>, replace the line <code class="highlighter-rouge">for i in `cat stocklist`</code> in the <a href="https://vrobot.github.io/2016/12/28/yahoo-finance-python-api/#shellscript">shell script</a> with <code class="highlighter-rouge">for i in `cat retry_file`</code>.</p>
+
+<h3>Conclusion</h3>
+
+<p>So far, we have gathered historical data on about 3 thousand stocks and sorted them based on fluctuation percent over various intervals of time. We then found news articles published on those "critical time intervals" when the stock fluctuated more that about 5 percent (fluctuations under 5 percent are not considered significant). I'm currently working on an NLP algorithm to recognize patterns between large fluctuations in a stock and news trends. If you're interested in this project or would like to know more about the theory behind our algorithm feel free to <a href="mailto:vkrishnan@ucsb.edu">email me!</a></p>
+
+
+
+
+</div>
+  
+  
+  
+</div>
+
+<div class="pagination">
+
+
+	<a class="pagination-item older" href="https://vrobot.github.io/2016/11/26/small-molecule-therapies-nsclc/">&laquo; Older</a>
+  
+  
+	<a class="pagination-item newer" href="https://vrobot.github.io/2017/02/05/cpu-design/">Newer &raquo;</a>
+  
+   <!-- <span class="pagination-item older" href="" &laquo; Older</span>
+  
+  
+    <span class="pagination-item newer" href="" Newer &raquo;</span> -->
+	
+	<!--  <a class="pagination-item newer" <!-- href="" Newer &raquo;</a> -->
+  
+</div>
+
+    </div>
+
+    <!-- MathJax -->
+<script type="text/javascript"
+  src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+
+<div class="comments">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+    var disqus_shortname = 'venkatkrishnan';
+    (function() {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+
+    </div>
+
+
+  </body>
+
+  
+  <!-- 
+  =
+  Website content Copyright (c) 2016 Venkat Krishnan.
+
+Page formatting credits are below :
+
+Released under MIT License
+
+Copyright (c) 2013 Mark Otto.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  
+  
+  -->
+  
+  
+</html>

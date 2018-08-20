@@ -1,0 +1,5 @@
+ErrorDocument 400 http://venkatech.io/errorDocs/400.html
+ErrorDocument 403 http://venkatech.io/errorDocs/403.html
+ErrorDocument 404 http://venkatech.io/errorDocs/404.html
+ErrorDocument 500 http://venkatech.io/errorDocs/500.html
+
